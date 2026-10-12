@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TrafficVision — Traffic Operations Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{--bg:#eef1f5;--panel:#fff;--ink:#14213d;--mute:#5d6b82;--line:#dbe1ea;--brand:#1d4ed8;--ok:#0f766e;--bad:#c2261f;--badbg:#fdecea;--okbg:#e3f4f1;--plate:#fff3bf;--plateink:#3d3000;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1522;--panel:#161f31;--ink:#e6ebf4;--mute:#93a1ba;--line:#26334b;--brand:#6c9bff;--ok:#4fd1bf;--bad:#ff8077;--badbg:#3a1c20;--okbg:#10332f;--plate:#4a3d10;--plateink:#ffe58a}}
+:root[data-theme="dark"]{--bg:#0e1522;--panel:#161f31;--ink:#e6ebf4;--mute:#93a1ba;--line:#26334b;--brand:#6c9bff;--ok:#4fd1bf;--bad:#ff8077;--badbg:#3a1c20;--okbg:#10332f;--plate:#4a3d10;--plateink:#ffe58a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.5 "Public Sans",system-ui,sans-serif}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0;font-weight:700}header p{margin:0;color:var(--mute);font-size:12px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--mute)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+main{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr);gap:20px;padding:20px 24px;max-width:1600px;margin:0 auto}
+@media(max-width:980px){main{grid-template-columns:1fr;padding:14px}}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h2{margin:0 0 12px;font-size:14px;font-weight:600}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.bar h2{margin:0}
+button,.btn{font:600 12px "Public Sans",sans-serif;padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:hover,.btn:hover{border-color:var(--brand)}
+button.primary,.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+:root:not([data-theme="light"]) button.primary{color:#0e1522}
+button:focus-visible,.btn:focus-within,input:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.stage{position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0b1220}
+canvas{width:100%;height:100%;display:block}
+.hud{position:absolute;left:10px;bottom:10px;display:flex;gap:14px;background:rgba(11,18,32,.82);color:#d7e0f0;padding:5px 10px;border-radius:6px;font-size:11px}
+.ctl{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--mute)}
+.ctl label{display:inline-flex;gap:6px;align-items:center;margin-right:14px}
+.tw{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;color:var(--mute);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line)}
+tbody tr{cursor:pointer}tbody tr:hover{background:var(--bg)}
+.plate{background:var(--plate);color:var(--plateink);padding:2px 7px;border-radius:4px}
+.tag{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600}
+.tag.bad{background:var(--badbg);color:var(--bad)}.tag.ok{background:var(--okbg);color:var(--ok)}
+.cls{display:grid;grid-template-columns:90px 1fr 32px;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+.track{height:8px;background:var(--bg);border-radius:4px;overflow:hidden}.fill{height:100%;border-radius:4px;transition:width .4s}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.kpi{border:1px solid var(--line);border-radius:8px;padding:10px 12px}.kpi b{display:block;font-size:22px}.kpi span{color:var(--mute);font-size:12px}
+.out{border:1px solid var(--line);border-radius:8px;padding:12px;min-height:84px;margin-top:10px;font-size:13px;color:var(--mute)}
+.chat{height:170px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;font-size:13px}
+.m{padding:8px 10px;border-radius:8px;max-width:92%}.m.u{background:var(--brand);color:#fff;align-self:flex-end}.m.a{background:var(--bg)}
+:root:not([data-theme="light"]) .m.u{color:#0e1522}
+.row{display:flex;gap:8px}input[type=text]{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:inherit}
+.modal{position:fixed;inset:0;background:rgba(10,15,25,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+.modal.on{display:flex}.sheet{background:var(--panel);border-radius:12px;width:100%;max-width:640px;max-height:90vh;overflow:auto;padding:22px;border:1px solid var(--line)}
+.sheet h3{margin:0}.sheet img{width:100%;border-radius:8px;border:1px solid var(--line)}
+dl{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;margin:16px 0}dt{color:var(--mute)}dd{margin:0;font-weight:600}
+.note{border-left:3px solid var(--brand);background:var(--bg);padding:10px 12px;border-radius:0 6px 6px 0}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>TrafficVision</h1><p>Traffic operations console · plate recognition, speed enforcement, vehicle counts</p></div>
+  <span class="pill"><span class="dot"></span><span id="st">Demo engine running</span></span>
+</header>
+<main>
+<div class="col">
+  <section class="card">
+    <div class="bar">
+      <h2 id="feed-title">Junction A-4 · Highway North</h2>
+      <div class="row">
+        <button onclick="switchFeed()">Switch feed</button>
+        <label class="btn primary">Upload video<input type="file" accept="video/*" hidden onchange="uploadVideo(event)"></label>
+        <button onclick="toggleCam()" id="cam-btn">Use camera</button>
+      </div>
+    </div>
+    <video id="vid" hidden muted playsinline></video>
+    <div class="stage"><canvas id="cv"></canvas>
+      <div class="hud mono"><span>FPS <b id="fps">30</b></span><span id="tracked">0 tracked</span></div></div>
+    <div class="ctl">
+      <div><label><input type="checkbox" id="c-box" checked> Show boxes and plates</label><label><input type="checkbox" id="c-vio" checked> Highlight speeding (over 60 km/h)</label></div>
+      <div class="row"><button onclick="togglePlay()" id="play-btn">Pause</button><button onclick="clearLog()">Clear log</button></div>
+    </div>
+  </section>
+  <section class="card">
+    <div class="bar"><h2>Vehicle registry</h2><span style="font-size:12px;color:var(--mute)">Select a row to open its enforcement report</span></div>
+    <div class="tw"><table><thead><tr><th>ID</th><th>Type</th><th>Plate</th><th>Speed</th><th>Status</th><th>Time</th><th>Documents</th><th>Action</th></tr></thead><tbody id="reg"></tbody></table></div>
+  </section>
+</div>
+<div class="col">
+  <section class="card">
+    <h2>Live counts</h2>
+    <div class="kpis"><div class="kpi"><b id="k-total">0</b><span>Objects in view</span></div><div class="kpi"><b id="k-vio" style="color:var(--bad)">0</b><span>Speeding</span></div></div>
+    <div id="classes"></div>
+  </section>
+  <section class="card">
+    <h2>Frame summary</h2>
+    <div class="row"><button class="primary" onclick="summarize()">Summarize current frame</button><button onclick="speak()">Read aloud</button></div>
+    <div class="out" id="sum">Summarize the current frame to see congestion, violations and a suggested action.</div>
+  </section>
+  <section class="card">
+    <h2>Registry assistant</h2>
+    <div class="chat" id="chat"><div class="m a">Ask about speeding vehicles, plates or counts. Try “how many violations?”</div></div>
+    <div class="row"><input type="text" id="q" placeholder="Ask about the registry" onkeydown="if(event.key==='Enter')ask()"><button class="primary" onclick="ask()">Send</button></div>
+  </section>
+</div>
+</main>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeM()"><div class="sheet" id="sheet"></div></div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),vid=document.getElementById('vid');
+const $=id=>document.getElementById(id);
+const LIMIT=60,FEEDS=['Junction A-4 · Highway North','Downtown Crosswalk · 5th Avenue','Expressway Southbound · Toll Plaza'];
+const CLS={car:{n:'Cars',c:'#2563eb',w:56,h:28,s:[35,88]},bus:{n:'Buses',c:'#0f766e',w:96,h:34,s:[25,55]},truck:{n:'Trucks',c:'#d97706',w:84,h:32,s:[30,65]},motorcycle:{n:'Motorcycles',c:'#7c3aed',w:34,h:16,s:[40,92]},autorickshaw:{n:'Auto-Rickshaws',c:'#65a30d',w:44,h:26,s:[20,55]},erickshaw:{n:'E-Rickshaws',c:'#0891b2',w:44,h:26,s:[10,30]},person:{n:'People',c:'#e11d48',w:14,h:14,s:[3,7]},dog:{n:'Dogs',c:'#0d9488',w:16,h:10,s:[5,15]}};
+const VEH=['car','bus','truck','motorcycle','autorickshaw','erickshaw'];
+let playing=1,feed=0,live=false,stream=null,objs=[],reg=new Map(),nid=1001,frames=0,last=performance.now(),cur=null;
+function resize(){cv.width=cv.parentElement.clientWidth;cv.height=cv.parentElement.clientHeight}
+addEventListener('resize',resize);resize();
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function plate(){const S=['UP','DL','MH','KA','TN','GJ','HR'],L=()=>String.fromCharCode(65+Math.random()*26|0);return `${S[Math.random()*S.length|0]} ${10+Math.random()*89|0} ${L()}${L()} ${1000+Math.random()*8999|0}`}
+const fd=t=>new Date(t).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+function mkDocs(k){return ['Registration (RC)','Insurance','Pollution (PUC)','Fitness certificate'].filter(n=>!(k==='erickshaw'&&n.includes('PUC'))).map(n=>{const t=Date.now()+rnd(-250,700)*864e5;return{n,t,ok:t>Date.now()}})}
+function dtag(o){if(!o.docs)return '<span style="color:var(--mute)">—</span>';const x=o.docs.filter(d=>!d.ok).length;return x?`<span class="tag bad">${x} expired</span>`:'<span class="tag ok">All valid</span>'}
+function docsHtml(o){if(!o.docs)return '<div class="note">Vehicle documents do not apply to this object type.</div>';return `<h2 style="font-size:14px;margin:0 0 8px">Vehicle documents</h2><div class="tw" style="max-height:none"><table><thead><tr><th>Document</th><th>Expiry date</th><th>Status</th></tr></thead><tbody>${o.docs.map(d=>`<tr style="cursor:default"><td>${d.n}</td><td class="mono">${fd(d.t)}</td><td><span class="tag ${d.ok?'ok':'bad'}">${d.ok?'Valid':'Expired'}</span></td></tr>`).join('')}</tbody></table></div><p style="font-size:12px;color:var(--mute);margin:8px 0 16px">Document dates are sample data in this demo. Connect a vehicle registry service for real checks.</p>`}
+function snapshot(o){const c=document.createElement('canvas');c.width=360;c.height=200;const g=c.getContext('2d'),d=CLS[o.cls];g.fillStyle='#16213a';g.fillRect(0,0,360,200);g.fillStyle='#223152';g.fillRect(0,150,360,50);
+ const w={car:170,bus:270,truck:250,motorcycle:90,autorickshaw:120,erickshaw:120}[o.cls],h={car:50,bus:80,truck:70,motorcycle:30,autorickshaw:62,erickshaw:62}[o.cls],x=(360-w)/2,y=146-h;
+ g.fillStyle=d.c;g.beginPath();g.roundRect(x,y,w,h,8);g.fill();
+ if(o.cls!=='motorcycle'){g.fillStyle='rgba(255,255,255,.75)';g.fillRect(x+w*.1,y+8,w*.8,h*.34)}
+ g.fillStyle='#0b1220';[.22,.78].forEach(f=>{g.beginPath();g.arc(x+w*f,144,12,0,7);g.fill()});
+ g.fillStyle='#fff3bf';g.fillRect(132,160,96,22);g.fillStyle='#3d3000';g.font='600 11px IBM Plex Mono,monospace';g.textAlign='center';g.fillText(o.plate,180,175);
+ g.textAlign='left';g.fillStyle='#e2e8f0';g.font='11px IBM Plex Mono,monospace';g.fillText(fd(Date.now())+'  '+o.time,10,18);g.fillText(o.speed,10,34);return c.toDataURL('image/png')}
+function spawn(){const k=Object.keys(CLS),name=k[Math.random()*k.length|0],d=CLS[name],v=VEH.includes(name),sp=Math.round(rnd(d.s[0],d.s[1])),lane=[.2,.3,.47,.62,.78,.88][Math.random()*6|0];
+ const o={id:nid++,cls:name,x:rnd(0,cv.width),y:v?cv.height*lane:rnd(cv.height*.05,cv.height*.95),vx:v?(sp/14)*(lane<.55?1:-1):rnd(-.4,.4),vy:v?0:rnd(-.4,.4),w:d.w,h:d.h,plate:v?plate():'Not applicable',sp,speed:sp+' km/h',vio:v&&sp>LIMIT,time:new Date().toLocaleTimeString(),conf:rnd(.89,.99),docs:v?mkDocs(name):null};
+ reg.set(o.id,o);return o}
+function init(){objs=[];for(let i=0;i<14;i++)objs.push(spawn());drawTable()}
+function road(){ctx.fillStyle='#0b1220';ctx.fillRect(0,0,cv.width,cv.height);
+ const H=cv.height;ctx.fillStyle='#16213a';ctx.fillRect(0,H*.12,cv.width,H*.76);
+ ctx.strokeStyle='#e2e8f0';ctx.lineWidth=2;ctx.setLineDash([]);[.12,.88].forEach(f=>{ctx.beginPath();ctx.moveTo(0,H*f);ctx.lineTo(cv.width,H*f);ctx.stroke()});
+ ctx.strokeStyle='#f5b942';ctx.beginPath();ctx.moveTo(0,H*.545);ctx.lineTo(cv.width,H*.545);ctx.moveTo(0,H*.555);ctx.lineTo(cv.width,H*.555);ctx.stroke();
+ ctx.strokeStyle='#64748b';ctx.setLineDash([18,16]);[.375,.71].forEach(f=>{ctx.beginPath();ctx.moveTo(0,H*f);ctx.lineTo(cv.width,H*f);ctx.stroke()});ctx.setLineDash([])}
+function frame(){requestAnimationFrame(frame);if(!playing)return;
+ const t=performance.now();frames++;if(t-last>=1000){$('fps').textContent=(frames*1000/(t-last)).toFixed(0);frames=0;last=t}
+ if(live&&vid.readyState>=2){ctx.drawImage(vid,0,0,cv.width,cv.height)}else road();
+ objs.forEach(o=>{if(!live){o.x+=o.vx;o.y+=o.vy;if(o.x>cv.width+60)o.x=-60;if(o.x<-60)o.x=cv.width+60;if(o.y<0||o.y>cv.height)o.vy*=-1}
+  const d=CLS[o.cls],bad=$('c-vio').checked&&o.vio;
+  if(!live){ctx.fillStyle=bad?'#ef4444':d.c;ctx.globalAlpha=.9;ctx.fillRect(o.x,o.y,o.w,o.h);ctx.globalAlpha=1}
+  if($('c-box').checked){ctx.strokeStyle=bad?'#ef4444':'#e2e8f0';ctx.lineWidth=1.5;ctx.strokeRect(o.x-2,o.y-2,o.w+4,o.h+4);
+   const lbl=VEH.includes(o.cls)?`${o.plate}  ${o.sp}`:o.cls;ctx.font='600 10px IBM Plex Mono,monospace';const w=ctx.measureText(lbl).width+8;
+   ctx.fillStyle=bad?'#ef4444':'#e2e8f0';ctx.fillRect(o.x-2,o.y-18,w,15);ctx.fillStyle=bad?'#fff':'#0b1220';ctx.fillText(lbl,o.x+2,o.y-7)}});
+ if(live){if(model)detect();else{ctx.fillStyle='rgba(11,18,32,.75)';ctx.fillRect(10,10,270,24);ctx.fillStyle='#e2e8f0';ctx.font='12px Public Sans';ctx.fillText(mstate==='failed'?'Model failed to load. Internet is needed.':'Loading detection model...',18,26)}}
+ stats()}
+function stats(){const c={};Object.keys(CLS).forEach(k=>c[k]=0);let vio=0;objs.forEach(o=>{c[o.cls]++;if(o.vio)vio++});
+ const tot=objs.length;$('tracked').textContent=tot+' tracked';$('k-total').textContent=tot;$('k-vio').textContent=vio;
+ const mx=Math.max(1,...Object.values(c));
+ $('classes').innerHTML=Object.entries(CLS).map(([k,d])=>`<div class="cls"><span>${d.n}</span><div class="track"><div class="fill" style="width:${c[k]/mx*100}%;background:${d.c}"></div></div><b class="mono">${c[k]}</b></div>`).join('')}
+function drawTable(){const rows=[...reg.values()].slice(-25).reverse();
+ $('reg').innerHTML=rows.map(o=>`<tr onclick="openM(${o.id})"><td class="mono">#${o.id}</td><td>${CLS[o.cls].n.replace(/s$/,'')}</td><td>${VEH.includes(o.cls)?`<span class="plate mono">${o.plate}</span>`:'<span style="color:var(--mute)">—</span>'}</td><td class="mono">${o.speed}</td><td><span class="tag ${o.vio?'bad':'ok'}">${o.vio?'Speeding':'Normal'}</span></td><td style="color:var(--mute)">${o.time}</td><td>${dtag(o)}</td><td><button class="primary" onclick="event.stopPropagation();openM(${o.id})">Open report</button></td></tr>`).join('')||'<tr><td colspan="8" style="color:var(--mute);padding:16px">The registry is empty. Clear log removed all records.</td></tr>'}
+function openM(id){const o=reg.get(id);if(!o)return;cur=o;const img=cv.toDataURL('image/png'),snap=VEH.includes(o.cls)?snapshot(o):'';
+ $('sheet').innerHTML=`<div class="bar"><div><div style="color:var(--mute);font-size:12px">Report TR-${o.id}</div><h3>Vehicle inspection and speed enforcement</h3></div><button onclick="closeM()" aria-label="Close">Close</button></div>
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">${snap?`<img src="${snap}" alt="Vehicle snapshot">`:''}<img src="${img}" alt="Scene frame at the time of the report"></div>
+ <dl><dt>Type</dt><dd>${CLS[o.cls].n.replace(/s$/,'')}</dd><dt>Plate</dt><dd class="mono">${o.plate}</dd><dt>Recorded speed</dt><dd class="mono">${o.speed} (limit ${LIMIT})</dd><dt>Status</dt><dd style="color:var(--${o.vio?'bad':'ok'})">${o.vio?'Speeding violation':'Within limit'}</dd><dt>Confidence</dt><dd>${Math.round(o.conf*100)}%</dd><dt>Date</dt><dd>${fd(Date.now())}</dd><dt>Time</dt><dd class="mono">${o.time}</dd></dl>${docsHtml(o)}
+ <div class="note">${o.vio?`Speed of ${o.speed} is over the ${LIMIT} km/h limit. Queue this record for citation review.`:'Speed is within the legal limit. No action needed.'}</div>
+ <div class="row" style="margin-top:16px"><button class="primary" onclick="copyMd()">Copy as Markdown</button></div>`;
+ $('modal').classList.add('on')}
+function closeM(){$('modal').classList.remove('on')}
+function copyMd(){if(!cur)return;const t=`### Enforcement report TR-${cur.id}\n- Type: ${cur.cls}\n- Plate: ${cur.plate}\n- Speed: ${cur.speed}\n- Status: ${cur.vio?'Speeding':'Normal'}\n- Logged: ${fd(Date.now())} ${cur.time}\n${cur.docs?'\n**Documents**\n'+cur.docs.map(d=>`- ${d.n}: ${fd(d.t)} (${d.ok?'Valid':'Expired'})`).join('\n')+'\n':''}`;
+ try{navigator.clipboard.writeText(t).then(()=>flash('Report copied')).catch(()=>flash('Copy blocked by the browser'))}catch(e){flash('Copy blocked by the browser')}}
+function flash(m){const b=document.querySelector('#sheet .row');if(b)b.insertAdjacentHTML('beforeend',`<span style="align-self:center;color:var(--ok)">${m}</span>`)}
+function togglePlay(){playing=!playing;$('play-btn').textContent=playing?'Pause':'Resume'}
+function switchFeed(){feed=(feed+1)%FEEDS.length;$('feed-title').textContent=FEEDS[feed]}
+function clearLog(){reg.clear();objs=[];drawTable()}
+async function toggleCam(){if(!live){try{stream=await navigator.mediaDevices.getUserMedia({video:true});vid.srcObject=stream;await vid.play();startLive();$('cam-btn').textContent='Stop camera'}catch(e){alert('Camera could not start ('+(e.name||'error')+'). '+(e.name==='NotAllowedError'?'Permission is blocked. This preview page may not be allowed to use the camera, so download the file and open it in your browser, or use Upload video.':e.name==='NotFoundError'?'No camera was found on this device.':'Try Upload video instead.'))}}else stopLive()}
+function stopLive(){if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;vid.removeAttribute('src');vid.srcObject=null;live=false;reg.clear();init();$('st').textContent='Demo engine running';$('cam-btn').textContent='Use camera'}
+function uploadVideo(e){const f=e.target.files[0];if(!f)return;stopLive();vid.src=URL.createObjectURL(f);vid.loop=true;vid.play();startLive();$('feed-title').textContent='Uploaded: '+f.name;$('cam-btn').textContent='Stop video'}
+function facts(){const v=[...reg.values()].filter(o=>VEH.includes(o.cls)),bad=v.filter(o=>o.vio),avg=v.length?Math.round(v.reduce((a,o)=>a+o.sp,0)/v.length):0;return{v,bad,avg,n:objs.length}}
+function summarize(){const f=facts(),load=f.v.length>10?'heavy':f.v.length>5?'moderate':'light';
+ $('sum').style.color='var(--ink)';$('sum').innerHTML=`<b>Traffic:</b> ${load}, ${f.v.length} vehicles, average ${f.avg} km/h.<br><b>Violations:</b> ${f.bad.length} over ${LIMIT} km/h${f.bad.length?` (fastest: ${f.bad.sort((a,b)=>b.sp-a.sp)[0].plate}, ${f.bad[0].speed})`:''}.<br><b>Suggested action:</b> ${f.bad.length>3?'Send a patrol unit and lower the variable speed sign.':f.bad.length?'Review flagged records for citations.':'No action needed.'}`}
+function speak(){const f=facts(),t=`${FEEDS[feed]}. ${f.v.length} vehicles tracked, average speed ${f.avg} kilometres per hour, ${f.bad.length} speeding violations.`;
+ if('speechSynthesis' in window){speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(t))}else alert('Voice is not supported in this browser.')}
+function ask(){const q=$('q').value.trim();if(!q)return;$('q').value='';const c=$('chat'),f=facts(),s=q.toLowerCase();
+ const esc=x=>x.replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+ let a;if(/violat|speed|fast/.test(s))a=f.bad.length?`${f.bad.length} vehicles are over ${LIMIT} km/h. Fastest: ${f.bad.sort((x,y)=>y.sp-x.sp)[0].plate} at ${f.bad[0].speed}.`:'No speeding vehicles in the registry.';
+ else if(/plate|alpr/.test(s))a=f.v.length?'Latest plates: '+f.v.slice(-3).map(o=>o.plate).join(', ')+'.':'No plates recorded yet.';
+ else if(/how many|count|total/.test(s))a=`${f.n} objects in view, including ${f.v.length} vehicles.`;
+ else if(/signal|optimi|light/.test(s))a=f.v.length>8?'Traffic is heavy. Extend the green phase on the main corridor by about 10 seconds.':'Traffic is light. Keep the current signal timing.';
+ else a='I can answer questions about violations, plates, counts and signal timing.';
+ c.innerHTML+=`<div class="m u">${esc(q)}</div><div class="m a">${a}</div>`;c.scrollTop=c.scrollHeight}
+let model=null,mstate='idle',busy=false,lastDet=0;
+const MAP={car:'car',bus:'bus',truck:'truck',motorcycle:'motorcycle',bicycle:'motorcycle',person:'person',dog:'dog'},MPP=0.06;
+function loadScript(u){return new Promise((ok,no)=>{const e=document.createElement('script');e.src=u;e.onload=ok;e.onerror=no;document.head.appendChild(e)})}
+async function loadModel(){if(model||mstate==='loading')return;mstate='loading';$('st').textContent='Loading detection model...';
+ try{await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');model=await cocoSsd.load({base:'lite_mobilenet_v2'});mstate='ready';$('st').textContent='Real detection running'}
+ catch(e){mstate='failed';$('st').textContent='Model failed to load'}}
+function startLive(){live=true;reg.clear();objs=[];drawTable();loadModel()}
+async function detect(){const now=performance.now();if(busy||vid.readyState<2||now-lastDet<100||!vid.videoWidth)return;busy=true;lastDet=now;
+ try{const ps=await model.detect(vid),ms=Math.round(performance.now()-now),sx=cv.width/vid.videoWidth,sy=cv.height/vid.videoHeight,t=performance.now(),used=new Set();let added=false;
+  ps.filter(p=>MAP[p.class]&&p.score>.45).forEach(p=>{const cls=MAP[p.class],[bx,by,bw,bh]=p.bbox,x=bx*sx,y=by*sy,w=bw*sx,h=bh*sy,cx=x+w/2,cy=y+h/2;
+   let best=null,bd=Math.max(w,h)*.9;objs.forEach(o=>{if(used.has(o)||o.cls!==cls)return;const d=Math.hypot(o.cx-cx,o.cy-cy);if(d<bd){bd=d;best=o}});
+   if(best){used.add(best);const dt=(t-best.t)/1000;if(dt>0){const inst=Math.hypot(cx-best.cx,cy-best.cy)/dt*MPP*3.6;best.sp=Math.round(best.sp*.7+inst*.3)}
+    Object.assign(best,{x,y,w,h,cx,cy,t,miss:0,speed:best.sp+' km/h',conf:p.score});best.vio=VEH.includes(cls)&&best.sp>LIMIT}
+   else{const v=VEH.includes(cls),o={id:nid++,cls,x,y,w,h,cx,cy,t,miss:0,plate:v?plate():'Not applicable',sp:0,speed:'0 km/h',vio:false,time:new Date().toLocaleTimeString(),conf:p.score,docs:v?mkDocs(cls):null};objs.push(o);reg.set(o.id,o);used.add(o);added=true}});
+  objs.forEach(o=>{if(!used.has(o))o.miss++});objs=objs.filter(o=>o.miss<6);
+  $('st').textContent='Real detection running · '+ms+' ms';if(added||frames%10===0)drawTable()}catch(e){}
+ busy=false}
+init();frame();
+</script>
+</body>
+</html>
